@@ -2,6 +2,7 @@ from fastapi import *
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+import datetime
 
 import os
 from dotenv import load_dotenv
@@ -42,19 +43,22 @@ async def index(request: Request):
 
 @app.post("/files")
 async def upload_info(text: str=Form(...), file:UploadFile=File(...)):
+    now = datetime.datetime.now()
+    number=now.strftime('%Y%m%d%H%M%S')
     
     if file and text:
         s3_client= boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=AWS_REGION_NAME)
         s3_client.upload_fileobj(
              file.file,
              S3_BUCKET_NAME,
-             Key=file.filename,
+             Key=number+file.filename,
              ExtraArgs={
-        "ContentType": file.content_type 
-    }
-        )
+        "ContentType": file.content_type })
 
-        image_url = "https://dlw5pmuk2nt8j.cloudfront.net/"+file.filename
+        
+        
+
+        image_url = "https://dlw5pmuk2nt8j.cloudfront.net/"+ number + file.filename
         
         cursor=con.cursor(dictionary=True)
         cursor.execute("insert into share (content, picture) value (%s,%s)", [text, image_url])
